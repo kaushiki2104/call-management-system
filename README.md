@@ -123,7 +123,7 @@ Instead of simple parent-child, we implemented a **closure table**:
 ## 🌐 Base URLs
 
 * Local: `http://localhost:5000/api`
-* Deployed: `https://call-backend-tau.vercel.app/api`
+* Deployed: `https://call-backend-tau.vercel.app`
 
 ---
 
