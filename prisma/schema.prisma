@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  calls     Call[]
+  users     User[]
+
+  @@index([name])
+}
+
+model User {
+  id             String        @id @default(uuid())
+  name           String
+  createdAt      DateTime      @default(now())
+  email          String        @unique
+  phoneNumber    String
+  updatedAt      DateTime      @updatedAt
+  password       String
+  organizationId String?
+  createdById    String?
+  orgRole        OrgRole?
+  platformRole   PlatformRole?
+  supervisorId   String?
+  callsMade      Call[]        @relation("CallsMade")
+  callsReceived  Call[]        @relation("CallsReceived")
+  createdBy      User?         @relation("UserCreator", fields: [createdById], references: [id])
+  createdUsers   User[]        @relation("UserCreator")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supervisor     User?         @relation("UserHierarchy", fields: [supervisorId], references: [id])
+  subordinates   User[]        @relation("UserHierarchy")
+
+  @@unique([phoneNumber, organizationId])
+  @@index([organizationId])
+  @@index([orgRole])
+  @@index([supervisorId])
+}
+
+model Call {
+  id             String         @id @default(uuid())
+  callerId       String?
+  receiverId     String?
+  duration       Int            @default(0)
+  createdAt      DateTime       @default(now())
+  endedAt        DateTime?
+  startedAt      DateTime
+  callerNumber   String
+  receiverNumber String
+ // endReason      CallEndReason?
+  organizationId String
+ // state          CallState
+  callType       CallType @default(OUTGOING)
+  caller         User?          @relation("CallsMade", fields: [callerId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  receiver       User?          @relation("CallsReceived", fields: [receiverId], references: [id])
+  recording      Recording?
+
+  @@index([organizationId, startedAt])
+  @@index([callerId])
+  @@index([receiverId])
+  @@index([callerNumber])
+  @@index([receiverNumber])
+}
+
+model Recording {
+  id        String   @id @default(uuid())
+  callId    String   @unique
+  fileUrl   String
+  fileSize  Int?
+  createdAt DateTime @default(now())
+  call      Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+}
+
+enum OrgRole {
+  ADMIN
+  MANAGER
+  LEADER
+  USER
+}
+
+
+enum CallType {
+  INCOMING
+  OUTGOING
+  MISSED
+  REJECTED
+ 
+}
+
+
+// enum CallState {
+//   INITIATED
+//   RINGING
+//   ENDED
+// }
+// 
+// enum CallEndReason {
+//   COMPLETED
+//   USER_REJECTED
+//   CLIENT_REJECTED
+//   MISSED
+//   NETWORK_FAILED
+// }
